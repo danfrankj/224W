@@ -1,0 +1,3 @@
+sylvon: input: big graph , output: RW generated samples of different sample sizes (100 per sample size)
+alvin: input : samples of different sizes, output: metric matrix (iteration x sample size -> metric value)
+dan: output: colorful graph of variance
