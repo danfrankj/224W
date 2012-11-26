@@ -5,7 +5,7 @@ import random
 
 def start_journey(sample_g, whole_graph, istart, check_period, 
             min_inc, target_node_num):
-  jumpback_prob = 0.0015
+  jumpback_prob = 0.15
   last_check_sz = sample_g.number_of_nodes()
   current_node = whole_graph.nodes()[istart]
   while sample_g.number_of_nodes() < target_node_num:
