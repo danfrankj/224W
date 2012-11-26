@@ -5,7 +5,7 @@ import networkx as nx
 import numpy
 
 orig_graph_path = "../email-Enron.txt"
-
+array_dim = 0
 #def get_kl_divergence(d1, d2):
 #    """
 #    Given 2 distributions d1 and d2, get the KL-divergence between the two
@@ -50,6 +50,14 @@ def get_degree_distribution(g) :
         degs[key] /= float(len(g.nodes()))
     return degs
 
+def get_scc_size_distribution(g):
+    scc_list = nx.strongly_connected_components(g)
+    max_scc_size = len(scc_list[0])
+    scc_size_dist = numpy.zeros(shape=(max_scc_size+1))
+    for scc in scc_list:
+        scc_size_dist[len(scc)] += 1
+    return scc_size_dist
+    
 def build_metric_matrix(sampling_path, metric_type):
     """
     Example usage:
@@ -91,15 +99,24 @@ def build_metric_matrix(sampling_path, metric_type):
     
     
     #calculate metric on original graph 
+    #use len(subsampled_list)+1 to leave space for 100% case
     if metric_type == 'cc':
         baseline_metric = nx.average_clustering(nx.read_edgelist(orig_graph_path))
         mx = numpy.zeros(shape=(num_iterations, len(subsampled_list)+1))
     elif metric_type == 'dd':
         orig_dd = get_degree_distribution(nx.read_edgelist(orig_graph_path))
         max_degree = max(orig_dd)
-        baseline_metric = [orig_dd.get(i) or 0 for i in range(max_degree+1)]
-        mx = numpy.zeros(shape=(num_iterations, len(subsampled_list)+1, max_degree+1)) #subsampled_list+1 to leave space for 100% case
-
+        array_dim = max_degree+1
+        baseline_metric = [orig_dd.get(i) or 0 for i in range(array_dim)]
+        mx = numpy.zeros(shape=(num_iterations, len(subsampled_list)+1, array_dim)) 
+    elif metric_type == 'scc':
+        scc_list = nx.strongly_connected_components(nx.read_edgelist(orig_graph_path))
+        max_scc_size = len(scc_list[0])
+        array_dim = max_scc_size+1
+        baseline_metric = numpy.zeros(shape=(array_dim))
+        for scc in scc_list:
+            baseline_metric[len(scc)] += 1
+        mx = numpy.zeros(shape=(num_iterations, len(subsampled_list)+1, array_dim))
     
     for index, sampling_size in enumerate(subsampled_list):
         print "Sampling percentage " + str(sampling_size)
@@ -114,8 +131,14 @@ def build_metric_matrix(sampling_path, metric_type):
                 metric = nx.average_clustering(g)
             elif metric_type == 'dd':
                 degree_dist = get_degree_distribution(g)
-                metric = [degree_dist.get(i) or 0 for i in range(max_degree+1)]
+                metric = [degree_dist.get(i) or 0 for i in range(array_dim)]
                 #get_kl_divergence(degree_dist, baseline_mx)
+            elif metric_type == 'scc':
+                scc_list = nx.strongly_connected_components(g)
+                metric = numpy.zeros(shape=(array_dim))
+                for scc in scc_list:
+                    metric[len(scc)] += 1
+                
             else:
                 raise Exception( metric_type + " is not a valid metric" )
             sample_sizes[index] = int(sampling_size)
@@ -128,7 +151,8 @@ def build_metric_matrix(sampling_path, metric_type):
     sample_sizes = numpy.append(sample_sizes, [100])
     numpy.savetxt(metric_type + "_samples", sample_sizes)    
     mx.tofile(metric_type+"_mx", sep=' ')
-    dim = numpy.array([num_iterations, len(sample_sizes), max_degree+1])
+    mx.tofile(metric_type+"_mx_bin")
+    dim = numpy.array([num_iterations, len(sample_sizes), array_dim])
     dim.tofile(metric_type+"_dim", sep=' ')
     #numpy.savetxt(metric_type + "_mx", mx)
 
