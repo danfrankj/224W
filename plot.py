@@ -68,8 +68,15 @@ def spread_plot(y, x=None, resol=10, color='blue', axes=None):
     axes.autoscale_view()
     return fig
 
+def dstat(p, q):
+  return np.max(np.abs(np.cumsum(p) - np.cumsum(q))) 
 
 ### example
-spread_plot(np.arange(100).reshape((10,10)))
+dd_arr = np.fromfile('dd_mx', sep = ' ').reshape((100, 11, 1384))
+spread_plot(np.apply_along_axis(lambda x: np.sum(np.arange(1384) * x),
+				2, dd_arr)) 
+plt.show()
+
+spread_plot(np.apply_along_axis(dstat, 2, dd_arr, dd_arr[0,10,:]))
 plt.show()
 
