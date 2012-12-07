@@ -65,6 +65,7 @@ def spread_plot(y, x=None, resol=10, color='blue', axes=None):
         poly.set_alpha(1.0 / resol)
         axes.add_patch(poly)
     # Adjust axes
+    plt.plot(x, np.mean(y, axis=0), 'm--', linewidth=2.0, hold=True)
     axes.autoscale_view()
     return fig
 
