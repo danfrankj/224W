@@ -4,7 +4,6 @@ import os, sys
 import networkx as nx
 import numpy
 
-orig_graph_path = "../email-Enron.txt"
 array_dim = 0
 #def get_kl_divergence(d1, d2):
 #    """
@@ -58,7 +57,7 @@ def get_scc_size_distribution(g):
         scc_size_dist[len(scc)] += 1
     return scc_size_dist
     
-def build_metric_matrix(sampling_path, metric_type):
+def build_metric_matrix(sampling_path, orig_graph_path, metric_type):
     """
     Example usage:
     python build_metric_matrix.py ./randomwalk cc
@@ -93,7 +92,7 @@ def build_metric_matrix(sampling_path, metric_type):
     num_iterations = len(os.listdir(sampling_path + os.sep + str_sample_size_list[0]))
     
     sorted_sample_size_list = sorted(str_sample_size_list, key=lambda x: int(x))
-    subsampled_list = [sorted_sample_size_list[i] for i in range(len(sorted_sample_size_list)) if i % 5 == 0]
+    subsampled_list = [sorted_sample_size_list[i] for i in range(len(sorted_sample_size_list)) if i in [1] ]
     
     sample_sizes = numpy.zeros(shape=(len(subsampled_list), 1))
     
@@ -123,6 +122,8 @@ def build_metric_matrix(sampling_path, metric_type):
         path = sampling_path + os.sep + sampling_size
         iterations = os.listdir(sampling_path + os.sep + sampling_size)
         for iteration in iterations:
+            if int(iteration) > 50:
+              continue
             print "Iteration " + str(iteration)
             g = nx.read_adjlist(path + os.sep + iteration)
 
@@ -150,16 +151,22 @@ def build_metric_matrix(sampling_path, metric_type):
 
     sample_sizes = numpy.append(sample_sizes, [100])
     numpy.savetxt(metric_type + "_samples", sample_sizes)    
-    mx.tofile(metric_type+"_mx", sep=' ')
-    mx.tofile(metric_type+"_mx_bin")
-    dim = numpy.array([num_iterations, len(sample_sizes), array_dim])
-    dim.tofile(metric_type+"_dim", sep=' ')
-    #numpy.savetxt(metric_type + "_mx", mx)
+    if metric_type == 'cc':        
+      numpy.savetxt(metric_type + "_mx", mx)
+    else:
+      mx.tofile(metric_type+"_mx", sep=' ')
+      mx.tofile(metric_type+"_mx_bin")
+      dim = numpy.array([num_iterations, len(sample_sizes), array_dim])
+      dim.tofile(metric_type+"_dim", sep=' ')
 
     return mx, sample_sizes
 
 if __name__ == "__main__":
-    build_metric_matrix(sys.argv[1], sys.argv[2])
+    if len(sys.argv) < 3:
+        print "Usage: python build_metric_matrix.py <samples dir> <orig graph path> <metric type (cc, dd, scc)>"
+    else:
+        build_metric_matrix(sys.argv[1], sys.argv[2], sys.argv[3])
+
             
             
                    
