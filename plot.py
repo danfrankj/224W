@@ -2,8 +2,8 @@
 import scipy
 import scipy.stats as stats
 import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib
 
 
 def spread_plot(y, x=None, resol=10, color='blue', axes=None):
@@ -71,35 +71,61 @@ def spread_plot(y, x=None, resol=10, color='blue', axes=None):
 def dstat(p, q):
   return np.max(np.abs(np.cumsum(p) - np.cumsum(q)))
 
-def variance_plot(arr3d):
+def variance_plot(arr3d, pcts):
 
     if not np.all(arr3d[0,-1,:] == arr3d[1,-1,:]):
         raise Exception("don't know where truth is in arr3d")
     truth = arr3d[0,-1,:]
 
     dstat_arr = np.apply_along_axis(dstat, 2, arr3d, truth)
-    def bootstrap_variance(arr1d, B=1000):
-        return np.array([np.var(arr1d[np.random.random_integers(0, arr1d.size-1, arr1d.size)])
-                for i in xrange(B)])
 
 
-    vars = np.apply_along_axis(bootstrap_variance, 0, dstat_arr)
-    spread_plot(vars)
+    vars = np.apply_along_axis(np.var, 0, dstat_arr)
+    plt.plot(pcts, vars, 'g-')
+    plt.title('Variance of D-statistic')
+    plt.xlabel('Sampling Percentage')
+    plt.ylabel('Variance')
 
 
+def threshold_plot(arr3d, pcts):
+
+
+    if not np.all(arr3d[0,-1,:] == arr3d[1,-1,:]):
+        raise Exception("don't know where truth is in arr3d")
+    truth = arr3d[0,-1,:]
+
+    dstat_arr = np.apply_along_axis(dstat, 2, arr3d, truth)
+    critical_quantiles = np.apply_along_axis(stats.mstats.mquantiles, 0, dstat_arr, .95)
+    critical_quantiles = np.squeeze(critical_quantiles)
+
+    thresholds = np.linspace(0., 1., 100)
+    y = np.array([pcts[np.argwhere(critical_quantiles <= thresh)[0]] for thresh in thresholds])
+    y = np.squeeze(y)
+
+    plt.plot(thresholds, y, 'rx')
+    plt.title("Threshold Plot")
+    plt.xlabel('D-statistic threshold')
+    plt.ylabel('Minimum Sampling Pct for 95% confidence <= threshold')
 
 ### example
+pcts = np.linspace(.1,1,11) # THIS IS A LIE! how can I read in the sampling percentages used?`
 dd_arr = np.fromfile('dd_mx', sep = ' ').reshape((100, 11, 1384))
+
+### this first plot is not used
 spread_plot(np.apply_along_axis(lambda x: np.sum(np.arange(1384) * x),
-				2, dd_arr))
+				2, dd_arr), x=pcts)
 plt.title("average degree")
 plt.show()
 
-spread_plot(np.apply_along_axis(dstat, 2, dd_arr, dd_arr[0,10,:]))
-plt.title('dstat_spread')
+spread_plot(np.apply_along_axis(dstat, 2, dd_arr, dd_arr[0,10,:]), x=pcts)
+plt.title('D-statistic Diribution')
+plt.xlabel('Sampling Percentage')
+plt.ylabel('Distribution of D-statistic')
 plt.show()
 
-variance_plot(dd_arr)
-plt.title("variance of dstat")
+variance_plot(dd_arr, pcts)
 plt.show()
 
+threshold_plot(dd_arr, pcts)
+plt.title('threshold plot')
+plt.show()
