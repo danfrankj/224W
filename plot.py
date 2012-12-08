@@ -74,14 +74,7 @@ def dstat(p, q):
     q = q / np.sum(q)
     return np.max(np.abs(np.cumsum(p) - np.cumsum(q)))
 
-def variance_plot(arr3d, pcts, metric=None):
-
-    if not np.all(arr3d[0,-1,:] == arr3d[1,-1,:]):
-        raise Exception("don't know where truth is in arr3d")
-    truth = arr3d[0,-1,:]
-
-    dstat_arr = np.apply_along_axis(dstat, 2, arr3d, truth)
-
+def variance_plot(dstat_arr, pcts, metric=None):
 
     vars = np.apply_along_axis(np.var, 0, dstat_arr)
     plt.plot(pcts, vars, 'g-', linewidth=2.5)
@@ -92,14 +85,8 @@ def variance_plot(arr3d, pcts, metric=None):
     plt.ylabel('Variance')
 
 
-def threshold_plot(arr3d, pcts, metric=None):
+def threshold_plot(dstat_arr, pcts, metric=None):
 
-
-    if not np.all(arr3d[0,-1,:] == arr3d[1,-1,:]):
-        raise Exception("don't know where truth is in arr3d")
-    truth = arr3d[0,-1,:]
-
-    dstat_arr = np.apply_along_axis(dstat, 2, arr3d, truth)
     critical_quantiles = np.apply_along_axis(stats.mstats.mquantiles, 0, dstat_arr, .95)
     critical_quantiles = np.squeeze(critical_quantiles)
 
@@ -123,8 +110,17 @@ def create_plots(metric='cc', graph='enron', show=True):
     dimension = np.fromfile(os.path.join('.', graph, metric + '_dim'), sep=' ')
     metric_arr = np.fromfile(os.path.join('.', graph, metric + '_mx'), sep = ' ' ).reshape(dimension)
 
+    if dimension.size == 3:
+        if not np.all(metric_arr[0,-1,:] == metric_arr[1,-1,:]):
+            raise Exception("don't know where to find truth in 3d array")
+        truth = metric_arr[0,-1,:]
+        dstat_arr = np.apply_along_axis(dstat, 2, arr3d, truth)
+    else if dimension.size == 2:
+        dstat_arr = metric_arr
+    else:
+        raise Exception("don't know what to do with a not 2 or 3 dim metric")
 
-    spread_plot(np.apply_along_axis(dstat, 2, metric_arr, metric_arr[0,sampling_pcts.size - 1,:]), x=sampling_pcts)
+    spread_plot(dstat_arr, x=sampling_pcts)
     plt.title('D-statistic Distribution ('+ metric.upper()+ ')' )
     plt.xlabel('Sampling Percentage')
     plt.ylabel('Distribution of D-statistion')
@@ -132,12 +128,12 @@ def create_plots(metric='cc', graph='enron', show=True):
     if show:
         plt.show()
 
-    variance_plot(metric_arr, sampling_pcts, metric=metric)
+    variance_plot(dstat_arr, sampling_pcts, metric=metric)
     plt.savefig(os.path.join('.', graph, 'figs', '_'.join((graph, metric, 'dstatvar')) + '.pdf'))
     if show:
         plt.show()
 
-    threshold_plot(metric_arr, sampling_pcts, metric=metric)
+    threshold_plot(dstat_arr, sampling_pcts, metric=metric)
     plt.savefig(os.path.join('.',graph,'figs', '_'.join((graph, metric, 'threshold')) + '.pdf'))
     if show:
         plt.show()
