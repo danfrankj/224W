@@ -114,8 +114,8 @@ def create_plots(metric='cc', graph='enron', show=True):
         if not np.all(metric_arr[0,-1,:] == metric_arr[1,-1,:]):
             raise Exception("don't know where to find truth in 3d array")
         truth = metric_arr[0,-1,:]
-        dstat_arr = np.apply_along_axis(dstat, 2, arr3d, truth)
-    else if dimension.size == 2:
+        dstat_arr = np.apply_along_axis(dstat, 2, metric_arr, truth)
+    elif dimension.size == 2:
         dstat_arr = metric_arr
     else:
         raise Exception("don't know what to do with a not 2 or 3 dim metric")
