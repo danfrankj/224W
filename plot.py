@@ -123,7 +123,7 @@ def create_plots(metric='cc', graph='enron', show=True):
     spread_plot(dstat_arr, x=sampling_pcts)
     plt.title('D-statistic Distribution ('+ metric.upper()+ ')' )
     plt.xlabel('Sampling Percentage')
-    plt.ylabel('Distribution of D-statistion')
+    plt.ylabel('Distribution of D-statistic')
     plt.savefig(os.path.join('.', graph, 'figs', '_'.join((graph, metric, 'dstatdistn')) + '.pdf'))
     if show:
         plt.show()
